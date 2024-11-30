@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,7 +19,6 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/excel")
 public class ExcelController {
-
     @PostMapping("/upload")
     public ResponseEntity<?> uploadAndProcessExcel(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty() || file.getOriginalFilename() == null) {
@@ -44,10 +42,7 @@ public class ExcelController {
 
             normalizeSheet(inputSheet, validSheet, invalidSheet);
 
-
             outputWorkbook.write(outputStream);
-
-
 
             HttpHeaders headers = new HttpHeaders();
             long currentTimeMillis = System.currentTimeMillis();
@@ -61,6 +56,60 @@ public class ExcelController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An error occurred while processing the file: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/upload/multi-files")
+    public ResponseEntity<byte[]> uploadAndProcessMultiFilesExcel(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty() || file.getOriginalFilename() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("No file uploaded. Please upload a valid Excel file.".getBytes());
+        }
+
+        if (!file.getOriginalFilename().endsWith(".xlsx")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid file type. Please upload an Excel file with .xlsx extension.".getBytes());
+        }
+
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream());
+             XSSFWorkbook validWorkbook = new XSSFWorkbook();
+             XSSFWorkbook invalidWorkbook = new XSSFWorkbook();
+             ByteArrayOutputStream zipOutputStream = new ByteArrayOutputStream();
+             java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(zipOutputStream)) {
+
+            // Process Excel file
+            Sheet inputSheet = workbook.getSheetAt(0); // First sheet of the input file
+            Sheet validSheet = validWorkbook.createSheet("Valid Rows");
+            Sheet invalidSheet = invalidWorkbook.createSheet("Invalid Rows");
+            normalizeSheet(inputSheet, validSheet, invalidSheet);
+
+            long currentTimeMillis = System.currentTimeMillis();
+
+            // Add valid workbook to ZIP
+            try (ByteArrayOutputStream validOutputStream = new ByteArrayOutputStream()) {
+                validWorkbook.write(validOutputStream);
+                addFileToZip("valid_file_"+currentTimeMillis+".xlsx", validOutputStream.toByteArray(), zos);
+            }
+
+            // Add invalid workbook to ZIP
+            try (ByteArrayOutputStream invalidOutputStream = new ByteArrayOutputStream()) {
+                invalidWorkbook.write(invalidOutputStream);
+                addFileToZip("invalid_file_"+currentTimeMillis+".xlsx", invalidOutputStream.toByteArray(), zos);
+            }
+
+            zos.close();
+
+            // Prepare response
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=processed_files_"+currentTimeMillis+".zip");
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(zipOutputStream.toByteArray());
+
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(("An error occurred while processing the file: " + e.getMessage()).getBytes());
         }
     }
 
@@ -159,6 +208,16 @@ public class ExcelController {
                 }
             }
         }
+    }
+
+    /**
+     * Helper method to add a file to the ZIP archive.
+     */
+    private void addFileToZip(String fileName, byte[] fileContent, java.util.zip.ZipOutputStream zos) throws IOException {
+        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(fileName);
+        zos.putNextEntry(entry);
+        zos.write(fileContent);
+        zos.closeEntry();
     }
 }
    
