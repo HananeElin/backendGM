@@ -43,7 +43,7 @@ public class ExcelController {
             Sheet validSheet = outputWorkbook.createSheet("Valid Rows");
             Sheet invalidSheet = outputWorkbook.createSheet("Invalid Rows");
 
-            normalizeSheet(inputSheet, validSheet, invalidSheet);
+            ExcelService.normalizeSheet(inputSheet, validSheet, invalidSheet);
 
             outputWorkbook.write(outputStream);
 
@@ -84,20 +84,20 @@ public class ExcelController {
             Sheet inputSheet = workbook.getSheetAt(0); // First sheet of the input file
             Sheet validSheet = validWorkbook.createSheet("Valid Rows");
             Sheet invalidSheet = invalidWorkbook.createSheet("Invalid Rows");
-            normalizeSheet(inputSheet, validSheet, invalidSheet);
+            ExcelService.normalizeSheet(inputSheet, validSheet, invalidSheet);
 
             long currentTimeMillis = System.currentTimeMillis();
 
             // Add valid workbook to ZIP
             try (ByteArrayOutputStream validOutputStream = new ByteArrayOutputStream()) {
                 validWorkbook.write(validOutputStream);
-                addFileToZip("valid_file_"+currentTimeMillis+".xlsx", validOutputStream.toByteArray(), zos);
+                ExcelService.addFileToZip("valid_file_"+currentTimeMillis+".xlsx", validOutputStream.toByteArray(), zos);
             }
 
             // Add invalid workbook to ZIP
             try (ByteArrayOutputStream invalidOutputStream = new ByteArrayOutputStream()) {
                 invalidWorkbook.write(invalidOutputStream);
-                addFileToZip("invalid_file_"+currentTimeMillis+".xlsx", invalidOutputStream.toByteArray(), zos);
+                ExcelService.addFileToZip("invalid_file_"+currentTimeMillis+".xlsx", invalidOutputStream.toByteArray(), zos);
             }
 
             zos.close();
@@ -127,113 +127,5 @@ public class ExcelController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
-
-    private void normalizeSheet(Sheet inputSheet, Sheet validSheet, Sheet invalidSheet) {
-        boolean isHeaderRow = true;
-        Set<String> phoneSet = new HashSet<>();
-        int validRowIndex = 0;
-        int invalidRowIndex = 0;
-
-        for (Row row : inputSheet) {
-            if (isHeaderRow) {
-                // Copier l'en-tête
-                copyRow(row, validSheet.createRow(validRowIndex++));
-                copyRow(row, invalidSheet.createRow(invalidRowIndex++));
-                isHeaderRow = false;
-                continue;
-            }
-            Cell registerCell = row.getCell(1);
-
-            // Vérifier et traiter le registre
-            boolean registerValid = registerCell != null && registerCell.getCellType() == CellType.STRING;
-            String rawRegister = registerValid ? registerCell.getStringCellValue() : null;
-            String normalizedRegister = registerValid ? processRegister(rawRegister) : "Invalid";
-
-            Cell phoneCell = row.getCell(0); // Supposé le num en première cell
-            if (phoneCell == null || phoneCell.getCellType() != CellType.STRING) {
-                copyRow(row, invalidSheet.createRow(invalidRowIndex++));
-                continue;
-            }
-
-            String rawPhone = phoneCell.getStringCellValue();
-            String normalizedPhone = normalizePhoneNumber(rawPhone);
-
-            if (normalizedPhone.equals("Invalid") || !phoneSet.add(normalizedPhone)) {
-                copyRow(row, invalidSheet.createRow(invalidRowIndex++));
-            } else {
-                phoneCell.setCellValue(normalizedPhone); // Mettre à jour le numéro normalisé
-                processAmount(row); // Normaliser les montants
-                copyRow(row, validSheet.createRow(validRowIndex++));
-            }
-        }
-    }
-    private String processRegister(String register) {
-        String cleanedRegister = register.replaceAll("[^0-9]", "");
-
-        if (cleanedRegister.length() < 9 || cleanedRegister.length() > 10) {
-            return "Invalid";
-        }
-
-        if (cleanedRegister.startsWith("5")||cleanedRegister.startsWith("6")||
-                cleanedRegister.startsWith("7")||cleanedRegister.startsWith("8")) {
-            return "0" + cleanedRegister;
-        }
-
-        return "Invalid";
-    }
-
-    private void processAmount(Row row) {
-        Cell amountCell = row.getCell(2); // Supposé le montant en troisième cellule
-        if (amountCell != null && amountCell.getCellType() == CellType.NUMERIC) {
-            int intAmount = (int) amountCell.getNumericCellValue();// Convertir les montants en entier
-            amountCell.setCellValue(intAmount);
-        }
-    }
-
-    private String normalizePhoneNumber(String phoneNumber) {
-        String cleaned = phoneNumber.replaceAll("[^0-9]", "");
-
-        if (cleaned.length() < 9 || cleaned.length() > 12) {
-            return "Invalid";
-        }
-
-        if (cleaned.startsWith("212")) {
-            return "0" + cleaned.substring(3);
-        }
-
-        if (cleaned.startsWith("05") || cleaned.startsWith("06") ||
-                cleaned.startsWith("07") || cleaned.startsWith("08")) {
-            return cleaned;
-        }
-
-
-        return "Invalid";
-    }
-
-    private void copyRow(Row sourceRow, Row targetRow) {
-        for (int i = 0; i < sourceRow.getPhysicalNumberOfCells(); i++) {
-            Cell sourceCell = sourceRow.getCell(i);
-            Cell targetCell = targetRow.createCell(i);
-
-            if (sourceCell != null) {
-                switch (sourceCell.getCellType()) {
-                    case STRING -> targetCell.setCellValue(sourceCell.getStringCellValue());
-                    case NUMERIC -> targetCell.setCellValue(sourceCell.getNumericCellValue());
-                    default -> targetCell.setCellValue(sourceCell.toString());
-                }
-            }
-        }
-    }
-
-    /**
-     * Helper method to add a file to the ZIP archive.
-     */
-    private void addFileToZip(String fileName, byte[] fileContent, java.util.zip.ZipOutputStream zos) throws IOException {
-        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(fileName);
-        zos.putNextEntry(entry);
-        zos.write(fileContent);
-        zos.closeEntry();
-    }
-
 }
    
