@@ -23,7 +23,12 @@ import java.util.Set;
 @RequestMapping("/api/excel")
 public class ExcelController {
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadAndProcessExcel(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadAndProcessExcel(
+        @RequestParam("file") MultipartFile file,
+        @RequestParam("telephone") int telephoneCell,
+        @RequestParam("telGestionnaire") int telGestionnaireCell,
+        @RequestParam("amount") int amountCell
+    ) {
         if (file.isEmpty() || file.getOriginalFilename() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("No file uploaded. Please upload a valid Excel file.");
@@ -37,13 +42,12 @@ public class ExcelController {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream());
              XSSFWorkbook outputWorkbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-
             Sheet inputSheet = workbook.getSheetAt(0); // Première feuille du fichier d'entrée
 
             Sheet validSheet = outputWorkbook.createSheet("Valid Rows");
             Sheet invalidSheet = outputWorkbook.createSheet("Invalid Rows");
 
-            ExcelService.normalizeSheet(inputSheet, validSheet, invalidSheet);
+            ExcelService.normalizeSheet(inputSheet, validSheet, invalidSheet, telephoneCell, telGestionnaireCell, amountCell);
 
             outputWorkbook.write(outputStream);
 
@@ -63,7 +67,12 @@ public class ExcelController {
     }
 
     @PostMapping("/upload/multi-files")
-    public ResponseEntity<byte[]> uploadAndProcessMultiFilesExcel(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<byte[]> uploadAndProcessMultiFilesExcel(
+        @RequestParam("file") MultipartFile file,
+        @RequestParam("telephone") int telephoneCell,
+        @RequestParam("telGestionnaire") int telGestionnaireCell,
+        @RequestParam("amount") int amountCell
+    ) {
         if (file.isEmpty() || file.getOriginalFilename() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("No file uploaded. Please upload a valid Excel file.".getBytes());
@@ -80,11 +89,15 @@ public class ExcelController {
              ByteArrayOutputStream zipOutputStream = new ByteArrayOutputStream();
              java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(zipOutputStream)) {
 
+            System.out.println("Received telephone cell: " + telephoneCell);
+            System.out.println("Received telGestionnaire cell: " + telGestionnaireCell);
+            System.out.println("Received amount cell: " + amountCell);
+
             // Process Excel file
             Sheet inputSheet = workbook.getSheetAt(0); // First sheet of the input file
             Sheet validSheet = validWorkbook.createSheet("Valid Rows");
             Sheet invalidSheet = invalidWorkbook.createSheet("Invalid Rows");
-            ExcelService.normalizeSheet(inputSheet, validSheet, invalidSheet);
+            ExcelService.normalizeSheet(inputSheet, validSheet, invalidSheet, telephoneCell, telGestionnaireCell, amountCell);
 
             long currentTimeMillis = System.currentTimeMillis();
 

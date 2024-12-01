@@ -10,7 +10,7 @@ import java.util.*;
 @Service
 public class ExcelService {
 
-    public static void normalizeSheet(Sheet inputSheet, Sheet validSheet, Sheet invalidSheet) {
+    public static void normalizeSheet(Sheet inputSheet, Sheet validSheet, Sheet invalidSheet, int telCell, int gestionnaireCell, int amountCell) {
         boolean isHeaderRow = true;
         Set<String> phoneSet = new HashSet<>();
         int validRowIndex = 0;
@@ -24,14 +24,14 @@ public class ExcelService {
                 isHeaderRow = false;
                 continue;
             }
-            Cell registerCell = row.getCell(1);
+            Cell registerCell = row.getCell(gestionnaireCell);
 
             // Check and process the register
             boolean registerValid = registerCell != null && registerCell.getCellType() == CellType.STRING;
             String rawRegister = registerValid ? registerCell.getStringCellValue() : null;
             String normalizedRegister = registerValid ? processRegister(rawRegister) : "Invalid";
 
-            Cell phoneCell = row.getCell(0); // Supposé le num en première cell
+            Cell phoneCell = row.getCell(telCell); // Supposé le num en première cell
             if (phoneCell == null || phoneCell.getCellType() != CellType.STRING) {
                 copyRow(row, invalidSheet.createRow(invalidRowIndex++));
                 continue;
@@ -44,7 +44,7 @@ public class ExcelService {
                 copyRow(row, invalidSheet.createRow(invalidRowIndex++));
             } else {
                 phoneCell.setCellValue(normalizedPhone); // Update the normalized number
-                processAmount(row); // Normalize the amounts
+                processAmount(row, amountCell); // Normalize the amounts
                 copyRow(row, validSheet.createRow(validRowIndex++));
             }
         }
@@ -64,8 +64,8 @@ public class ExcelService {
         return "Invalid";
     }
 
-    public static void processAmount(Row row) {
-        Cell amountCell = row.getCell(2); // Assume the amount is in the third cell
+    public static void processAmount(Row row, int amountIndexCell) {
+        Cell amountCell = row.getCell(amountIndexCell);
         if (amountCell != null && amountCell.getCellType() == CellType.NUMERIC) {
             int intAmount = (int) amountCell.getNumericCellValue(); // Convert the amounts to integers
             amountCell.setCellValue(intAmount);
@@ -166,7 +166,7 @@ public class ExcelService {
         String cellValue = getCellValueAsString(cell);
 
         // Detect phone numbers
-        if (cellValue.matches("^([5678])\\d{8}$") ||
+        if (cellValue.matches("^(05|06|07|08|5|6|7|8)\\d{8}$") ||
                 cellValue.matches("^212\\d{8}$") ||
                 cellValue.matches("^\\+212\\d{8}$")) {
             return "phoneNumber";
