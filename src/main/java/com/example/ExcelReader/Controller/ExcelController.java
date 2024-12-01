@@ -1,6 +1,7 @@
 
 package com.example.ExcelReader.Controller;
 
+import com.example.ExcelReader.Service.ExcelService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpHeaders;
@@ -12,7 +13,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @CrossOrigin(origins = "*")
@@ -110,6 +113,18 @@ public class ExcelController {
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(("An error occurred while processing the file: " + e.getMessage()).getBytes());
+        }
+    }
+
+    @PostMapping("/detect-columns")
+    public ResponseEntity<Map<String, Object>> detectColumns(@RequestParam("file") MultipartFile file) {
+        try {
+            // Parse the uploaded file
+            Map<String, Object> response = ExcelService.detectColumns(file);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -219,5 +234,6 @@ public class ExcelController {
         zos.write(fileContent);
         zos.closeEntry();
     }
+
 }
    
