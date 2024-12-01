@@ -32,7 +32,22 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/C:/Users/youballa/Downloads/test_file.xlsx"
+							"src": "/C:/Users/youballa/Downloads/Copie de GO MOBILE DU 19 11 24 ACTUALISE (1).xlsx"
+						},
+						{
+							"key": "telephone",
+							"value": "0",
+							"type": "text"
+						},
+						{
+							"key": "telGestionnaire",
+							"value": "1",
+							"type": "text"
+						},
+						{
+							"key": "amount",
+							"value": "2",
+							"type": "text"
 						}
 					]
 				},
@@ -74,7 +89,22 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/C:/Users/youballa/Downloads/test_file.xlsx"
+							"src": "/C:/Users/youballa/Downloads/Copie de GO MOBILE DU 19 11 24 ACTUALISE (1).xlsx"
+						},
+						{
+							"key": "telephone",
+							"value": "0",
+							"type": "text"
+						},
+						{
+							"key": "telGestionnaire",
+							"value": "1",
+							"type": "text"
+						},
+						{
+							"key": "amount",
+							"value": "2",
+							"type": "text"
 						}
 					]
 				},
@@ -117,7 +147,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/C:/Users/youballa/Downloads/test_file.xlsx"
+							"src": "/C:/Users/youballa/Downloads/EQDOM_RECOUV_FIC_PV_22112024 (1).xlsx"
 						}
 					]
 				},
