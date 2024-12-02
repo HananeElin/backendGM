@@ -1,6 +1,8 @@
 
 package com.example.ExcelReader.Controller;
 
+import com.example.ExcelReader.Entity.Download_logs;
+import com.example.ExcelReader.Service.DownloadHistoryService;
 import com.example.ExcelReader.Service.ExcelService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -13,15 +15,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/excel")
 public class ExcelController {
+
+    private DownloadHistoryService downloadHistoryService;
     @PostMapping("/upload")
     public ResponseEntity<?> uploadAndProcessExcel(
         @RequestParam("file") MultipartFile file,
@@ -66,6 +67,8 @@ public class ExcelController {
         }
     }
 
+
+
     @PostMapping("/upload/multi-files")
     public ResponseEntity<byte[]> uploadAndProcessMultiFilesExcel(
         @RequestParam("file") MultipartFile file,
@@ -98,26 +101,28 @@ public class ExcelController {
             Sheet validSheet = validWorkbook.createSheet("Valid Rows");
             Sheet invalidSheet = invalidWorkbook.createSheet("Invalid Rows");
             ExcelService.normalizeSheet(inputSheet, validSheet, invalidSheet, telephoneCell, telGestionnaireCell, amountCell);
+            // Get the original file name (old file name)
+            String originalFileName = file.getOriginalFilename();
 
             long currentTimeMillis = System.currentTimeMillis();
 
             // Add valid workbook to ZIP
             try (ByteArrayOutputStream validOutputStream = new ByteArrayOutputStream()) {
                 validWorkbook.write(validOutputStream);
-                ExcelService.addFileToZip("valid_file_"+currentTimeMillis+".xlsx", validOutputStream.toByteArray(), zos);
+                ExcelService.addFileToZip("valid_file_"+ originalFileName + "_"+currentTimeMillis+".xlsx", validOutputStream.toByteArray(), zos);
             }
 
             // Add invalid workbook to ZIP
             try (ByteArrayOutputStream invalidOutputStream = new ByteArrayOutputStream()) {
                 invalidWorkbook.write(invalidOutputStream);
-                ExcelService.addFileToZip("invalid_file_"+currentTimeMillis+".xlsx", invalidOutputStream.toByteArray(), zos);
+                ExcelService.addFileToZip("invalid_file_"+ originalFileName + "_"+currentTimeMillis+".xlsx", invalidOutputStream.toByteArray(), zos);
             }
 
             zos.close();
 
             // Prepare response
             HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Disposition", "attachment; filename=processed_files_"+currentTimeMillis+".zip");
+            headers.add("Content-Disposition", "attachment; filename=processed_files_"+ originalFileName + "_"+currentTimeMillis+".zip");
             return ResponseEntity.ok()
                     .headers(headers)
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -139,6 +144,14 @@ public class ExcelController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+
+
+
+    @GetMapping("/download-history")
+    public ResponseEntity<List<Download_logs>> getDownloadHistory() {
+        List<Download_logs> history = downloadHistoryService.getDownloadHistory();
+        return ResponseEntity.ok(history);
     }
 }
    
