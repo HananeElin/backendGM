@@ -25,9 +25,9 @@ public class ExcelController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadAndProcessExcel(
         @RequestParam("file") MultipartFile file,
-        @RequestParam("telephone") int telephoneCell,
-        @RequestParam("telGestionnaire") int telGestionnaireCell,
-        @RequestParam("amount") int amountCell
+        @RequestParam(value = "telephone", required = false, defaultValue = "0") int telephoneCell,
+        @RequestParam(value = "telGestionnaire", required = false, defaultValue = "1") int telGestionnaireCell,
+        @RequestParam(value = "amount", required = false, defaultValue = "2") int amountCell
     ) {
         if (file.isEmpty() || file.getOriginalFilename() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
