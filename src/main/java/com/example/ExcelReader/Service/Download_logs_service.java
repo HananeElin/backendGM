@@ -20,17 +20,17 @@ public class Download_logs_service {
     public List<Download_logs> getDownloadHistory() {
         return downloadLogsrepository.findAll(); // Retourne tous les enregistrements
     }
-    // Recherche par nom de fichier
+    // search by FileName
     public List<Download_logs> searchByFileName(String fileName) {
         return downloadLogsrepository.findByFileNameContainingIgnoreCase(fileName);
     }
 
-    // Recherche par date exacte
+    // search date exact
     public List<Download_logs> searchByDownloadDate(LocalDateTime downloadDate) {
         return downloadLogsrepository.findByDownloadDate(downloadDate);
     }
 
-    // Recherche par intervalle de dates
+    //search between two  dates
     public List<Download_logs> searchByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         return downloadLogsrepository.findByDownloadDateBetween(startDate, endDate);
     }

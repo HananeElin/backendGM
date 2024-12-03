@@ -22,8 +22,4 @@ public class Download_logs {
 
     private String fileName;
     private LocalDateTime CreateAt;
-
-//    private String downloadedBy;
-
-
 }
