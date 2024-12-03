@@ -1,8 +1,7 @@
 
 package com.example.ExcelReader.Controller;
 
-import com.example.ExcelReader.Entity.Download_logs;
-import com.example.ExcelReader.Service.DownloadHistoryService;
+
 import com.example.ExcelReader.Service.ExcelService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -22,7 +21,7 @@ import java.util.*;
 @RequestMapping("/api/excel")
 public class ExcelController {
 
-    private DownloadHistoryService downloadHistoryService;
+
     @PostMapping("/upload")
     public ResponseEntity<?> uploadAndProcessExcel(
         @RequestParam("file") MultipartFile file,
@@ -148,10 +147,5 @@ public class ExcelController {
 
 
 
-    @GetMapping("/download-history")
-    public ResponseEntity<List<Download_logs>> getDownloadHistory() {
-        List<Download_logs> history = downloadHistoryService.getDownloadHistory();
-        return ResponseEntity.ok(history);
-    }
 }
    
