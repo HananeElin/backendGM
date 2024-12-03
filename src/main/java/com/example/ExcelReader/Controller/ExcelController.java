@@ -2,9 +2,12 @@
 package com.example.ExcelReader.Controller;
 
 
+import com.example.ExcelReader.Repository.DownloadLogsRepository;
+import com.example.ExcelReader.Service.DownloadLogsService;
 import com.example.ExcelReader.Service.ExcelService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,6 +24,8 @@ import java.util.*;
 @RequestMapping("/api/excel")
 public class ExcelController {
 
+    @Autowired
+    private DownloadLogsService downloadLogsService;
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadAndProcessExcel(
@@ -42,6 +47,11 @@ public class ExcelController {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream());
              XSSFWorkbook outputWorkbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            // Get the original file name (old file name)
+            String originalFileName = file.getOriginalFilename();
+
+            long currentTimeMillis = System.currentTimeMillis();
+
             Sheet inputSheet = workbook.getSheetAt(0); // Première feuille du fichier d'entrée
 
             Sheet validSheet = outputWorkbook.createSheet("Valid Rows");
@@ -51,9 +61,12 @@ public class ExcelController {
 
             outputWorkbook.write(outputStream);
 
+            String outputFilename = "processed_file_"+currentTimeMillis+".xlsx";
+            // Saving the log entry with the originalFileName, outputFilename to download_logs table
+            downloadLogsService.saveLog(originalFileName, outputFilename);
+
             HttpHeaders headers = new HttpHeaders();
-            long currentTimeMillis = System.currentTimeMillis();
-            headers.add("Content-Disposition", "attachment; filename=processed_file_"+currentTimeMillis+".xlsx");
+            headers.add("Content-Disposition", "attachment; filename="+outputFilename);
 
             return ResponseEntity.ok()
                     .headers(headers)
@@ -65,8 +78,6 @@ public class ExcelController {
                     .body("An error occurred while processing the file: " + e.getMessage());
         }
     }
-
-
 
     @PostMapping("/upload/multi-files")
     public ResponseEntity<byte[]> uploadAndProcessMultiFilesExcel(
@@ -90,10 +101,6 @@ public class ExcelController {
              XSSFWorkbook invalidWorkbook = new XSSFWorkbook();
              ByteArrayOutputStream zipOutputStream = new ByteArrayOutputStream();
              java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(zipOutputStream)) {
-
-            System.out.println("Received telephone cell: " + telephoneCell);
-            System.out.println("Received telGestionnaire cell: " + telGestionnaireCell);
-            System.out.println("Received amount cell: " + amountCell);
 
             // Process Excel file
             Sheet inputSheet = workbook.getSheetAt(0); // First sheet of the input file
@@ -119,9 +126,14 @@ public class ExcelController {
 
             zos.close();
 
+            String outputFilename = "processed_files_"+currentTimeMillis+".zip";
+            // Saving the log entry with the originalFileName, outputFilename to download_logs table
+            downloadLogsService.saveLog(originalFileName, outputFilename);
+
             // Prepare response
             HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Disposition", "attachment; filename=processed_files_"+ originalFileName + "_"+currentTimeMillis+".zip");
+            headers.add("Content-Disposition", "attachment; filename="+outputFilename);
+
             return ResponseEntity.ok()
                     .headers(headers)
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
