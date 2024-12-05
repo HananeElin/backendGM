@@ -74,7 +74,7 @@ public class BoaController {
                 continue;
             }
 
-            // Ajouter les données nettoyées
+            //add the clean ones
             rows.add(new String[] { columns[0], phone, columns[4] });
         }
         return rows;
