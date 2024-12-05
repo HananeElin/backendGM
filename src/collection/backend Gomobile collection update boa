@@ -294,6 +294,72 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Boa",
+			"item": [
+				{
+					"name": "upload and process text",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/C:/Users/youballa/Downloads/WELCOME_OUT_SVI_20241203.txt"
+								},
+								{
+									"key": "telephone",
+									"value": "0",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "telGestionnaire",
+									"value": "1",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "amount",
+									"value": "2",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/files/upload_txt",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"files",
+								"upload_txt"
+							]
+						},
+						"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [

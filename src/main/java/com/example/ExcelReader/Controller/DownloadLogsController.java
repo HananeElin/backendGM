@@ -13,9 +13,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/download_logs")
 public class DownloadLogsController {
+    private final DownloadLogsService downloadLogsService;
 
-    @Autowired
-    private DownloadLogsService downloadLogsService;
+    public DownloadLogsController(DownloadLogsService downloadLogsService) {
+        this.downloadLogsService = downloadLogsService;
+    }
 
     // Endpoint to retrieve all logs
     @GetMapping("/")
